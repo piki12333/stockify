@@ -1,6 +1,8 @@
 import ApexCharts from 'apexcharts';
 
+// Susun warna dan opsi grafik berdasarkan tema yang sedang aktif.
 const getMainChartOptions = () => {
+	// Grafik ini memakai data contoh; grafik dashboard di bawah memakai data aplikasi.
 	let mainChartColors = {}
 
 	if (document.documentElement.classList.contains('dark')) {
@@ -142,9 +144,74 @@ if (document.getElementById('main-chart')) {
 	const chart = new ApexCharts(document.getElementById('main-chart'), getMainChartOptions());
 	chart.render();
 
-	// init again when toggling dark mode
+	// Perbarui warna grafik saat tema halaman berubah.
 	document.addEventListener('dark-mode', function () {
 		chart.updateOptions(getMainChartOptions());
+	});
+}
+
+// Render grafik pergerakan stok dari data transaksi yang disediakan dashboard.
+const stockChartElement = document.getElementById('dashboard-stock-chart');
+if (stockChartElement) {
+	// Data label dan jumlah pergerakan diberikan oleh controller dashboard.
+	const stockChartOptions = () => {
+		const isDarkMode = document.documentElement.classList.contains('dark');
+		const labelColor = isDarkMode ? '#9CA3AF' : '#6B7280';
+		const borderColor = isDarkMode ? '#374151' : '#E5E7EB';
+
+		return {
+			chart: {
+				type: 'area',
+				height: 280,
+				fontFamily: 'Inter, sans-serif',
+				toolbar: { show: false },
+				zoom: { enabled: false },
+				background: 'transparent',
+			},
+			series: [
+				{ name: 'Barang masuk', data: JSON.parse(stockChartElement.dataset.in || '[]') },
+				{ name: 'Barang keluar', data: JSON.parse(stockChartElement.dataset.out || '[]') },
+			],
+			colors: ['#4F46E5', '#10B981'],
+			dataLabels: { enabled: false },
+			stroke: { curve: 'smooth', width: 3 },
+			fill: {
+				type: 'gradient',
+				gradient: { opacityFrom: 0.22, opacityTo: 0.02, stops: [0, 90, 100] },
+			},
+			markers: { size: 0, hover: { size: 5 } },
+			grid: {
+				borderColor,
+				strokeDashArray: 4,
+				padding: { left: 8, right: 12 },
+			},
+			legend: { show: false },
+			xaxis: {
+				categories: JSON.parse(stockChartElement.dataset.labels || '[]'),
+				axisBorder: { show: false },
+				axisTicks: { show: false },
+				labels: { style: { colors: labelColor, fontSize: '12px' } },
+			},
+			yaxis: {
+				min: 0,
+				forceNiceScale: true,
+				labels: {
+					style: { colors: labelColor, fontSize: '12px' },
+					formatter: (value) => Math.round(value).toLocaleString('id-ID'),
+				},
+			},
+			tooltip: {
+				theme: isDarkMode ? 'dark' : 'light',
+				y: { formatter: (value) => `${value.toLocaleString('id-ID')} unit` },
+			},
+		};
+	};
+
+	const stockChart = new ApexCharts(stockChartElement, stockChartOptions());
+	stockChart.render();
+
+	document.addEventListener('dark-mode', () => {
+		stockChart.updateOptions(stockChartOptions());
 	});
 }
 

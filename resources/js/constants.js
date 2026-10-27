@@ -1,4 +1,5 @@
 
+// Nama kelas dan nilai tema yang digunakan bersama pada skrip antarmuka.
 const DARK_CLASS_NAME = 'dark'
 const DARK_COLOR_THEME = 'dark'
 const LIGHT_CLASS_NAME = 'light'

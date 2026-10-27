@@ -5,6 +5,8 @@
  */
 
 import axios from 'axios';
+
+// Siapkan Axios sebagai klien HTTP global dan kirim header permintaan AJAX standar.
 window.axios = axios;
 
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';

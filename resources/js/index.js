@@ -1,3 +1,4 @@
+// Muat gaya dan interaksi bersama untuk halaman dashboard.
 import './style.css';
 import './sidebar';
 import './charts';
