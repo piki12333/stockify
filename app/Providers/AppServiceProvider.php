@@ -5,10 +5,12 @@ namespace App\Providers;
 use App\Models\ApplicationSetting;
 use App\Repositories\CategoryRepository;
 use App\Repositories\ProductRepository;
+use App\Repositories\StockOpnameRepository;
 use App\Repositories\SupplierRepository;
 use App\Repositories\TransactionRepository;
 use App\Services\CategoryService;
 use App\Services\ProductService;
+use App\Services\StockOpnameService;
 use App\Services\SupplierService;
 use App\Services\TransactionService;
 use Illuminate\Support\ServiceProvider;
@@ -27,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(TransactionRepository::class);
         $this->app->singleton(CategoryRepository::class);
         $this->app->singleton(SupplierRepository::class);
+        $this->app->singleton(StockOpnameRepository::class);
 
         // Service didaftarkan sebagai singleton dan menerima Repository melalui DI.
         $this->app->singleton(ProductService::class, function ($app) {
@@ -43,6 +46,10 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(SupplierService::class, function ($app) {
             return new SupplierService($app->make(SupplierRepository::class));
+        });
+
+        $this->app->singleton(StockOpnameService::class, function ($app) {
+            return new StockOpnameService($app->make(StockOpnameRepository::class));
         });
     }
 
