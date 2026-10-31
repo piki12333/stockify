@@ -117,7 +117,7 @@
                         <th class="px-4 py-3">Harga Jual</th>
                         <th class="px-4 py-3">Stock</th>
                         <th class="px-4 py-3">Min Stock</th>
-                        @if (auth()->user()->hasRole(\App\Models\User::ROLE_ADMIN))
+                        @if (auth()->user()->canManageProducts())
                             <th class="px-4 py-3">Aksi</th>
                         @endif
                     </tr>
@@ -177,7 +177,6 @@
                                 </div>
                             </td>
 
-                            @if (auth()->user()->hasRole(\App\Models\User::ROLE_ADMIN))
                             <td class="px-4 py-2">
                                 <span class="px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 rounded">
                                     {{ $categoryName ?? 'Tanpa Kategori' }}
@@ -207,6 +206,7 @@
                                 {{ $product->min_stock }}
                             </td>
 
+                            @if (auth()->user()->canManageProducts())
                             <td class="px-4 py-2">
                                 <div class="flex items-center space-x-3">
                                     <button type="button"
@@ -215,6 +215,7 @@
                                         Edit
                                     </button>
 
+                                    @if (auth()->user()->hasRole(\App\Models\User::ROLE_ADMIN))
                                     <form action="{{ route('produk.destroy', $product->id) }}"
                                         method="POST"
                                         onsubmit="return confirm('Yakin ingin menghapus produk ini?');" class="inline-block">
@@ -226,20 +227,21 @@
                                             Hapus
                                         </button>
                                     </form>
+                                    @endif
                                 </div>
                             </td>
                             @endif
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ auth()->user()->hasRole(\App\Models\User::ROLE_ADMIN) ? 10 : 8 }}" class="px-4 py-4 text-center">
+                            <td colspan="{{ auth()->user()->hasRole(\App\Models\User::ROLE_ADMIN) ? 10 : (auth()->user()->canManageProducts() ? 9 : 8) }}" class="px-4 py-4 text-center">
                                 Belum ada data produk di database Stockify.
                             </td>
                         </tr>
                     @endforelse
 
                     <tr id="search-empty-row" hidden>
-                        <td colspan="{{ auth()->user()->hasRole(\App\Models\User::ROLE_ADMIN) ? 10 : 8 }}" class="px-4 py-4 text-center">
+                        <td colspan="{{ auth()->user()->hasRole(\App\Models\User::ROLE_ADMIN) ? 10 : (auth()->user()->canManageProducts() ? 9 : 8) }}" class="px-4 py-4 text-center">
                             Produk tidak ditemukan. Coba kata kunci lain.
                         </td>
                     </tr>
@@ -358,7 +360,7 @@
 
 @endif
 
-@if (auth()->user()->hasRole(\App\Models\User::ROLE_ADMIN))
+@if (auth()->user()->canManageProducts())
 {{-- Modal Edit Produk --}}
 <div id="edit-modal" tabindex="-1" aria-hidden="true"
     class="hidden fixed inset-0 z-50 overflow-y-auto bg-gray-900 bg-opacity-50 dark:bg-opacity-80">

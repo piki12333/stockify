@@ -19,7 +19,7 @@
                 <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Daftar Supplier (Pemasok)</h2>
             </div>
             <div class="flex flex-col space-y-3 md:flex-row md:items-center md:space-y-0 md:space-x-3">
-                @if (auth()->user()->hasRole(\App\Models\User::ROLE_ADMIN))
+                @if (auth()->user()->hasRole(\App\Models\User::ROLE_ADMIN, \App\Models\User::ROLE_MANAGER))
                     <button data-modal-target="add-modal" data-modal-toggle="add-modal" type="button" class="px-4 py-2 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300">
                         + Tambah Supplier
                     </button>
@@ -41,7 +41,7 @@
                         <th class="px-4 py-3">Nama Perusahaan</th>
                         <th class="px-4 py-3">No. Telepon / WA</th>
                         <th class="px-4 py-3">Alamat Lengkap</th>
-                        @if (auth()->user()->hasRole(\App\Models\User::ROLE_ADMIN))
+                        @if (auth()->user()->hasRole(\App\Models\User::ROLE_ADMIN, \App\Models\User::ROLE_MANAGER))
                             <th class="px-4 py-3">Aksi</th>
                         @endif
                     </tr>
@@ -53,7 +53,7 @@
                             <td class="supplier-name px-4 py-3 font-semibold text-gray-900 dark:text-white">{{ $supplier->name }}</td>
                             <td class="supplier-phone px-4 py-3 text-gray-900 dark:text-white">{{ $supplier->phone ?? '-' }}</td>
                             <td class="supplier-address px-4 py-3 text-gray-900 dark:text-white">{{ $supplier->address ?? '-' }}</td>
-                            @if (auth()->user()->hasRole(\App\Models\User::ROLE_ADMIN))
+                            @if (auth()->user()->hasRole(\App\Models\User::ROLE_ADMIN, \App\Models\User::ROLE_MANAGER))
                             <td class="px-4 py-3">
                                 <div class="flex items-center space-x-3">
                                     <button type="button" onclick="openEditModal({{ $supplier->id }})" class="px-3 py-1 text-sm font-medium text-white bg-yellow-400 rounded-lg hover:bg-yellow-500">

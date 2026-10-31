@@ -105,3 +105,4 @@ class StockOpnameService
         return $this->repository->delete($id);
     }
 }
+

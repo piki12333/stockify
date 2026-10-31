@@ -58,38 +58,38 @@ Route::middleware('auth')->group(function () {
     Route::get('/produk', [ProductController::class, 'index'])->name('produk.index');
     Route::get('/produk/{id}', [ProductController::class, 'show'])->whereNumber('id')->name('produk.show');
 
-    // Admin dan manajer dapat menambahkan produk baru.
+    // Admin dan manajer dapat mengelola produk, kategori, supplier, dan melihat laporan.
     Route::middleware('role:admin,warehouse_manager')->group(function () {
         Route::post('/produk/simpan', [ProductController::class, 'store'])->name('produk.store');
-    });
-
-    // Perubahan dan penghapusan data produk hanya untuk Admin.
-    Route::middleware('role:admin')->group(function () {
-        Route::get('/produk/export', [ProductController::class, 'export'])->name('produk.export');
-        Route::post('/produk/import', [ProductController::class, 'import'])->name('produk.import');
         Route::get('/produk/{id}/edit', [ProductController::class, 'edit'])->name('produk.edit');
         Route::put('/produk/{id}', [ProductController::class, 'update'])->name('produk.update');
-        Route::delete('/produk/{id}', [ProductController::class, 'destroy'])->name('produk.destroy');
-        Route::delete('/produk/hapus-banyak', [ProductController::class, 'bulkDestroy'])->name('produk.bulkDestroy');
 
         Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
         Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
         Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
         Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+
+        Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
+        Route::get('/suppliers/{id}/edit', [SupplierController::class, 'edit'])->name('suppliers.edit');
         Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
         Route::put('/suppliers/{id}', [SupplierController::class, 'update'])->name('suppliers.update');
         Route::delete('/suppliers/{id}', [SupplierController::class, 'destroy'])->name('suppliers.destroy');
+
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
+    });
+
+    // Fitur khusus Admin: ekspor/impor produk, hapus produk, dan kelola user.
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/produk/export', [ProductController::class, 'export'])->name('produk.export');
+        Route::post('/produk/import', [ProductController::class, 'import'])->name('produk.import');
+        Route::delete('/produk/{id}', [ProductController::class, 'destroy'])->name('produk.destroy');
+        Route::delete('/produk/hapus-banyak', [ProductController::class, 'bulkDestroy'])->name('produk.bulkDestroy');
+
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
-    });
-
-    // Admin dan manajer dapat melihat laporan operasional serta daftar supplier.
-    Route::middleware('role:admin,warehouse_manager')->group(function () {
-        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-        Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
-        Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
     });
 
     // Semua role operasional dapat melihat transaksi; Admin/Manajer membuat tugas dan Staff mengonfirmasi tugasnya.

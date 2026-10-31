@@ -118,3 +118,4 @@ class StockOpnameRepository
         return DB::table('stock_opnames')->where('id', $id)->delete();
     }
 }
+
