@@ -5,28 +5,22 @@
 <div class="px-4 mx-auto max-w-screen-2xl py-6 min-h-screen">
     <div class="relative overflow-hidden bg-white shadow-md dark:bg-gray-800 sm:rounded-lg">
 
-        {{-- Header --}}
-        <div class="flex flex-col px-4 py-3 space-y-3 lg:flex-row lg:items-center lg:justify-between lg:space-y-0 lg:space-x-4">
-            <div class="flex items-center flex-1 space-x-4">
-                <h5 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    <span class="text-gray-500 dark:text-gray-400">Total Products:</span>
-                    {{ $totalProducts ?? 0 }}
-                </h5>
-
-                {{-- Tombol Kembali & Reset Filter (Muncul jika difilter dari Kategori) --}}
-                @if(request('category_id'))
-                    <div class="flex items-center space-x-2">
-                        <a href="{{ route('categories.index') }}" class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600">
-                            &larr; Kembali ke Kategori
-                        </a>
-                        <a href="{{ route('produk.index') }}" class="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-4 focus:ring-red-300 dark:focus:ring-red-900">
-                            Tampilkan Semua Produk
-                        </a>
-                    </div>
-                @endif
+        <div class="flex flex-col gap-5 border-b border-gray-200 px-4 py-5 dark:border-gray-700 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <p class="text-sm font-medium uppercase tracking-wide text-blue-700 dark:text-blue-400">Inventaris</p>
+                <h1 class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">Manajemen Produk</h1>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Kelola katalog, harga, dan persediaan produk.</p>
+                <p class="mt-3 inline-flex rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+                    {{ number_format($totalProducts ?? 0, 0, ',', '.') }} produk
+                    @if (request()->filled('search') || request()->filled('category_id'))
+                        ditemukan
+                    @else
+                        terdaftar
+                    @endif
+                </p>
             </div>
 
-            <div class="flex flex-col space-y-3 md:flex-row md:items-center md:space-y-0 md:space-x-3">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
 
                 @if (auth()->user()->hasRole(\App\Models\User::ROLE_ADMIN))
                     <a href="{{ route('produk.export') }}" class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
@@ -45,8 +39,8 @@
                 @endif
 
                 @if (auth()->user()->canManageProducts())
-                    <button data-modal-target="crud-modal" data-modal-toggle="crud-modal" type="button" class="px-4 py-2 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800">
-                        + Add New Product
+                    <button data-modal-target="crud-modal" data-modal-toggle="crud-modal" onclick="openAddModal()" type="button" class="inline-flex items-center justify-center rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                        + Tambah Produk
                     </button>
                 @endif
             </div>
@@ -57,46 +51,75 @@
                 {{ session('success') }}
             </div>
         @endif
-        @if ($errors->has('file'))
+        @if (session('error'))
             <div class="mx-4 mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300" role="alert">
-                {{ $errors->first('file') }}
+                {{ session('error') }}
+            </div>
+        @endif
+        @if ($errors->any())
+            <div class="mx-4 mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300" role="alert">
+                <ul class="list-inside list-disc">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
             </div>
         @endif
 
         @if (auth()->user()->hasRole(\App\Models\User::ROLE_ADMIN))
-            <div class="mx-4 my-4 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/50">
-                <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Impor data produk</h2>
-                <p class="mt-1 text-xs text-gray-600 dark:text-gray-300">
-                    Pilih berkas CSV dengan format yang sama seperti hasil ekspor. Kategori dan supplier harus sudah tersedia; maksimal 1.000 produk per impor.
-                </p>
-                <form action="{{ route('produk.import') }}" method="POST" enctype="multipart/form-data" class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
-                    @csrf
-                    <label for="products-csv" class="sr-only">Berkas CSV produk</label>
-                    <input id="products-csv" type="file" name="file" accept=".csv,text/csv" required
-                        class="block w-full text-sm text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-700 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-blue-800 dark:text-gray-200">
-                    <button type="submit" class="shrink-0 rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700">
-                        Impor CSV
-                    </button>
-                </form>
-            </div>
+            <details class="mx-4 mt-4 rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-700/50">
+                <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-gray-800 dark:text-gray-200">Impor data produk (CSV)</summary>
+                <div class="border-t border-gray-200 px-4 py-4 dark:border-gray-600">
+                    <p class="text-xs text-gray-600 dark:text-gray-300">
+                        Pilih berkas CSV dengan format yang sama seperti hasil ekspor. Kategori dan supplier harus sudah tersedia; maksimal 1.000 produk per impor.
+                    </p>
+                    <form action="{{ route('produk.import') }}" method="POST" enctype="multipart/form-data" class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+                        @csrf
+                        <label for="products-csv" class="sr-only">Berkas CSV produk</label>
+                        <input id="products-csv" type="file" name="file" accept=".csv,text/csv" required
+                            class="block w-full text-sm text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-700 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-blue-800 dark:text-gray-200">
+                        <button type="submit" class="shrink-0 rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700">
+                            Impor CSV
+                        </button>
+                    </form>
+                </div>
+            </details>
         @endif
 
-        {{-- Pencarian --}}
-        <div class="px-4 py-4 border-t border-b border-gray-200 dark:border-gray-700">
-            <label for="search-products"
-                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                Cari Produk
-            </label>
-
-            <input type="search"
-                id="search-products"
-                autocomplete="off"
-                placeholder="Cari kode produk, nama produk, kategori, supplier..."
-                class="block w-full max-w-md p-2.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-
-            <p id="search-result-count"
-                class="mt-2 text-xs text-gray-500 dark:text-gray-400"
-                aria-live="polite"></p>
+        <div class="border-b border-gray-200 px-4 py-4 dark:border-gray-700 sm:px-6">
+            <form action="{{ route('produk.index') }}" method="GET" class="flex flex-col gap-3 lg:flex-row lg:items-end">
+                <div class="w-full lg:max-w-md">
+                    <label for="search-products" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">Cari produk</label>
+                    <input type="search" name="search" id="search-products" value="{{ request('search') }}" autocomplete="off"
+                        placeholder="Kode, nama, kategori, atau supplier..."
+                        class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                </div>
+                <div class="w-full lg:max-w-xs">
+                    <label for="filter-category" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">Kategori</label>
+                    <select name="category_id" id="filter-category"
+                        class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        <option value="">Semua kategori</option>
+                        @foreach ($categories as $category)
+                            <option value="{{ $category->id }}" @selected((string) request('category_id') === (string) $category->id)>{{ $category->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" class="rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700">
+                        Cari
+                    </button>
+                    @if (request()->filled('search') || request()->filled('category_id'))
+                        <a href="{{ route('produk.index') }}" class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
+                            Reset
+                        </a>
+                    @endif
+                </div>
+            </form>
+            @if (request()->filled('category_id'))
+                <a href="{{ route('categories.index') }}" class="mt-3 inline-flex text-sm font-medium text-blue-700 hover:underline dark:text-blue-400">
+                    &larr; Kembali ke kategori
+                </a>
+            @endif
         </div>
 
         {{-- Tabel Produk --}}
@@ -126,14 +149,6 @@
                 <tbody>
                     @forelse ($products as $product)
                         @php
-                            $categoryName = \Illuminate\Support\Facades\DB::table('categories')
-                                ->where('id', $product->category_id)
-                                ->value('name');
-
-                            $supplierName = \Illuminate\Support\Facades\DB::table('suppliers')
-                                ->where('id', $product->supplier_id)
-                                ->value('name');
-
                             $dotColor = 'bg-green-500';
 
                             if ($product->stock <= $product->min_stock) {
@@ -179,12 +194,12 @@
 
                             <td class="px-4 py-2">
                                 <span class="px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 rounded">
-                                    {{ $categoryName ?? 'Tanpa Kategori' }}
+                                    {{ $product->category_name ?? 'Tanpa Kategori' }}
                                 </span>
                             </td>
 
                             <td class="px-4 py-2 text-gray-900 dark:text-white">
-                                {{ $supplierName ?? '-' }}
+                                {{ $product->supplier_name ?? '-' }}
                             </td>
 
                             <td class="px-4 py-2 text-gray-900 dark:text-white">
@@ -235,19 +250,23 @@
                     @empty
                         <tr>
                             <td colspan="{{ auth()->user()->hasRole(\App\Models\User::ROLE_ADMIN) ? 10 : (auth()->user()->canManageProducts() ? 9 : 8) }}" class="px-4 py-4 text-center">
-                                Belum ada data produk di database Stockify.
+                                @if (request()->filled('search') || request()->filled('category_id'))
+                                    Produk tidak ditemukan. Coba ubah kata kunci atau filter.
+                                @else
+                                    Belum ada data produk di database Stockify.
+                                @endif
                             </td>
                         </tr>
                     @endforelse
-
-                    <tr id="search-empty-row" hidden>
-                        <td colspan="{{ auth()->user()->hasRole(\App\Models\User::ROLE_ADMIN) ? 10 : (auth()->user()->canManageProducts() ? 9 : 8) }}" class="px-4 py-4 text-center">
-                            Produk tidak ditemukan. Coba kata kunci lain.
-                        </td>
-                    </tr>
                 </tbody>
             </table>
         </div>
+
+        @if ($products->hasPages())
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+                {{ $products->links() }}
+            </div>
+        @endif
     </div>
 </div>
 
@@ -263,7 +282,7 @@
                     Tambah Produk Baru
                 </h3>
 
-                <button type="button" data-modal-hide="crud-modal"
+                <button type="button" onclick="closeAddModal()" data-modal-hide="crud-modal"
                     class="px-3 py-1 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm dark:hover:bg-gray-600 dark:hover:text-white">X</button>
             </div>
 
@@ -286,9 +305,9 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kategori</label>
-                        <select name="category_id" required
+                        <select name="category_id" id="add_category_id" required
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white">
-                            <option value="">-- Pilih Kategori --</option>
+                            <option value="" disabled selected hidden></option>
                             @foreach ($categories as $kategori)
                                 <option value="{{ $kategori->id }}">
                                     {{ $kategori->name }}
@@ -301,9 +320,9 @@
                         <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Supplier</label>
                         <select name="supplier_id" required
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white">
-                            <option value="">-- Pilih Supplier --</option>
+                            <option value="" disabled selected hidden></option>
                             @foreach ($suppliers as $sup)
-                                <option value="{{ $sup->id }}">
+                                <option value="{{ $sup->id }}" data-category-ids="{{ implode(',', $sup->category_ids ?? []) }}">
                                     {{ $sup->name }}
                                 </option>
                             @endforeach
@@ -398,7 +417,7 @@
                         <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kategori</label>
                         <select name="category_id" id="edit_category_id" required
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white">
-                            <option value="">-- Pilih Kategori --</option>
+                            <option value="" disabled selected hidden></option>
                             @foreach ($categories as $kategori)
                                 <option value="{{ $kategori->id }}">
                                     {{ $kategori->name }}
@@ -411,9 +430,9 @@
                         <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Supplier</label>
                         <select name="supplier_id" id="edit_supplier_id" required
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white">
-                            <option value="">-- Pilih Supplier --</option>
+                            <option value="" disabled selected hidden></option>
                             @foreach ($suppliers as $sup)
-                                <option value="{{ $sup->id }}">
+                                <option value="{{ $sup->id }}" data-category-ids="{{ implode(',', $sup->category_ids ?? []) }}">
                                     {{ $sup->name }}
                                 </option>
                             @endforeach
@@ -477,14 +496,43 @@
 <script>
 const productEditUrlTemplate = @json(route('produk.edit', ['id' => '__PRODUCT_ID__']));
 const productUpdateUrlTemplate = @json(route('produk.update', ['id' => '__PRODUCT_ID__']));
+const supplierOptionsBySelect = new WeakMap();
+
+function filterSuppliersByCategory(categorySelect, supplierSelect, preferredSupplierId = null) {
+    const categoryId = categorySelect.value;
+    const selectedSupplierId = preferredSupplierId ?? supplierSelect.value;
+    let supplierOptions = supplierOptionsBySelect.get(supplierSelect);
+
+    if (!supplierOptions) {
+        supplierOptions = Array.from(supplierSelect.options).slice(1);
+        supplierOptionsBySelect.set(supplierSelect, supplierOptions);
+    }
+
+    const matchingOptions = supplierOptions.filter(option => {
+        const categoryIds = option.dataset.categoryIds
+            ? option.dataset.categoryIds.split(',').filter(Boolean)
+            : [];
+
+        return !categoryId || categoryIds.length === 0 || categoryIds.includes(categoryId);
+    });
+
+    supplierSelect.replaceChildren(supplierSelect.options[0], ...matchingOptions);
+    supplierSelect.value = matchingOptions.some(option => option.value === String(selectedSupplierId))
+        ? selectedSupplierId
+        : '';
+}
+
+document.getElementById('add_category_id')?.addEventListener('change', function () {
+    filterSuppliersByCategory(this, document.querySelector('#crud-modal select[name="supplier_id"]'));
+});
+
+document.getElementById('edit_category_id')?.addEventListener('change', function () {
+    filterSuppliersByCategory(this, document.getElementById('edit_supplier_id'));
+});
 
 document.addEventListener('DOMContentLoaded', function () {
-    const searchInput = document.getElementById('search-products');
-    const searchResultCount = document.getElementById('search-result-count');
-    const searchEmptyRow = document.getElementById('search-empty-row');
-    const productRows = Array.from(document.querySelectorAll('.product-row'));
-
     const checkboxAll = document.getElementById('checkbox-all');
+    const productCheckboxes = Array.from(document.querySelectorAll('.product-checkbox'));
     const btnHapusBanyak = document.getElementById('btn-hapus-banyak');
     const teksJumlah = document.getElementById('jumlah-terpilih');
     const formHapusBanyak = document.getElementById('form-hapus-banyak');
@@ -517,75 +565,29 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        const checkedBoxes = document.querySelectorAll('.product-checkbox:checked');
-        const visibleCheckboxes = productRows
-            .filter(row => !row.hidden)
-            .map(row => row.querySelector('.product-checkbox'));
-
-        const checkedVisible = visibleCheckboxes.filter(cb => cb && cb.checked);
+        const checkedBoxes = productCheckboxes.filter(checkbox => checkbox.checked);
 
         btnHapusBanyak.classList.toggle('hidden', checkedBoxes.length === 0);
         btnHapusBanyak.classList.toggle('inline-flex', checkedBoxes.length > 0);
 
         teksJumlah.textContent = checkedBoxes.length;
 
-        checkboxAll.checked = visibleCheckboxes.length > 0 &&
-            checkedVisible.length === visibleCheckboxes.length;
+        checkboxAll.checked = productCheckboxes.length > 0 &&
+            checkedBoxes.length === productCheckboxes.length;
 
-        checkboxAll.indeterminate = checkedVisible.length > 0 &&
-            checkedVisible.length < visibleCheckboxes.length;
+        checkboxAll.indeterminate = checkedBoxes.length > 0 &&
+            checkedBoxes.length < productCheckboxes.length;
     }
-
-    function filterProducts() {
-        const keyword = searchInput.value.trim().toLocaleLowerCase();
-        let visibleCount = 0;
-
-        productRows.forEach(row => {
-            const searchableText = Array.from(row.cells)
-                .slice(1, -1)
-                .map(cell => cell.innerText)
-                .join(' ')
-                .toLocaleLowerCase();
-
-            const matches = searchableText.includes(keyword);
-            row.hidden = !matches;
-
-            if (!matches) {
-                const checkbox = row.querySelector('.product-checkbox');
-                if (checkbox) {
-                    checkbox.checked = false;
-                }
-            } else {
-                visibleCount++;
-            }
-        });
-
-        searchEmptyRow.hidden =
-            keyword.length === 0 || visibleCount > 0 || productRows.length === 0;
-
-        searchResultCount.textContent = keyword.length > 0
-            ? visibleCount + ' produk ditemukan'
-            : productRows.length + ' produk ditampilkan';
-
-        toggleTombolHapus();
-    }
-
-    searchInput.addEventListener('input', filterProducts);
 
     checkboxAll?.addEventListener('change', function () {
-        productRows.forEach(row => {
-            if (!row.hidden) {
-                const checkbox = row.querySelector('.product-checkbox');
-                if (checkbox) {
-                    checkbox.checked = this.checked;
-                }
-            }
+        productCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
         });
 
         toggleTombolHapus();
     });
 
-    document.querySelectorAll('.product-checkbox').forEach(checkbox => {
+    productCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', toggleTombolHapus);
     });
 
@@ -604,7 +606,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    filterProducts();
+    toggleTombolHapus();
 });
 
 function appendProductAttributeRow(container, name = '', value = '') {
@@ -676,7 +678,11 @@ function openEditModal(id) {
             document.getElementById('edit_product_code').value = data.product_code ?? '';
             document.getElementById('edit_name').value = data.name ?? '';
             document.getElementById('edit_category_id').value = data.category_id ?? '';
-            document.getElementById('edit_supplier_id').value = data.supplier_id ?? '';
+            filterSuppliersByCategory(
+                document.getElementById('edit_category_id'),
+                document.getElementById('edit_supplier_id'),
+                data.supplier_id ?? ''
+            );
             document.getElementById('edit_purchase_price').value = data.purchase_price ?? '';
             document.getElementById('edit_selling_price').value = data.selling_price ?? '';
             document.getElementById('edit_stock').value = data.stock ?? '';
@@ -698,6 +704,22 @@ function closeEditModal() {
     const modal = document.getElementById('edit-modal');
     modal.classList.add('hidden');
     modal.setAttribute('aria-hidden', 'true');
+}
+
+function openAddModal() {
+    const modal = document.getElementById('crud-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.setAttribute('aria-hidden', 'false');
+    }
+}
+
+function closeAddModal() {
+    const modal = document.getElementById('crud-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.setAttribute('aria-hidden', 'true');
+    }
 }
 </script>
 @endsection

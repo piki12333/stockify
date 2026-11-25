@@ -40,7 +40,7 @@ class StockOpnameService
             'system_stock' => $systemStock,
             'physical_stock' => $physicalStock,
             'difference' => $difference,
-            'notes' => $data['notes'] ?? null,
+            'notes' => !empty($data['notes']) ? $data['notes'] : '-',
         ]);
     }
 

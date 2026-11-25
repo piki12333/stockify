@@ -10,6 +10,16 @@
             <span class="font-medium">Berhasil!</span> {{ session('success') }}
         </div>
     @endif
+    @if(session('error'))
+        <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-red-900/30 dark:text-red-300 border border-red-300 dark:border-red-800" role="alert">
+            <span class="font-medium">Perhatian!</span> {{ session('error') }}
+        </div>
+    @endif
+    @if ($errors->any())
+        <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-red-900/30 dark:text-red-300 border border-red-300 dark:border-red-800" role="alert">
+            {{ $errors->first() }}
+        </div>
+    @endif
 
     <div class="relative overflow-hidden bg-white shadow-md dark:bg-gray-800 sm:rounded-lg">
         
@@ -39,6 +49,7 @@
                     <tr>
                         <th class="px-4 py-3 w-16">No</th>
                         <th class="px-4 py-3">Nama Perusahaan</th>
+                        <th class="px-4 py-3">Kategori Produk</th>
                         <th class="px-4 py-3">No. Telepon / WA</th>
                         <th class="px-4 py-3">Alamat Lengkap</th>
                         @if (auth()->user()->hasRole(\App\Models\User::ROLE_ADMIN, \App\Models\User::ROLE_MANAGER))
@@ -51,6 +62,17 @@
                         <tr class="supplier-row border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
                             <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $index + 1 }}</td>
                             <td class="supplier-name px-4 py-3 font-semibold text-gray-900 dark:text-white">{{ $supplier->name }}</td>
+                            <td class="px-4 py-3">
+                                @if ($supplier->category_names === [])
+                                    <span class="text-sm text-gray-500 dark:text-gray-400">Semua kategori</span>
+                                @else
+                                    <div class="flex flex-wrap gap-1.5">
+                                        @foreach ($supplier->category_names as $categoryName)
+                                            <span class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">{{ $categoryName }}</span>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </td>
                             <td class="supplier-phone px-4 py-3 text-gray-900 dark:text-white">{{ $supplier->phone ?? '-' }}</td>
                             <td class="supplier-address px-4 py-3 text-gray-900 dark:text-white">{{ $supplier->address ?? '-' }}</td>
                             @if (auth()->user()->hasRole(\App\Models\User::ROLE_ADMIN, \App\Models\User::ROLE_MANAGER))
@@ -72,7 +94,7 @@
                         </tr>
                     @empty
                         <tr id="empty-data-row">
-                            <td colspan="5" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
+                            <td colspan="6" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
                                 Belum ada data supplier. Silakan tambahkan supplier baru.
                             </td>
                         </tr>
@@ -80,7 +102,7 @@
                     
                     {{-- Baris khusus jika pencarian tidak ditemukan --}}
                     <tr id="search-not-found" class="hidden">
-                        <td colspan="5" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
+                        <td colspan="6" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
                             Supplier yang dicari tidak ditemukan.
                         </td>
                     </tr>
@@ -92,8 +114,8 @@
 
 {{-- MODAL TAMBAH SUPPLIER --}}
 <div id="add-modal" tabindex="-1" aria-hidden="true" class="hidden fixed inset-0 z-50 overflow-y-auto bg-gray-900 bg-opacity-50 dark:bg-opacity-80">
-    <div class="flex justify-center items-center min-h-full p-4 w-full">
-        <div class="relative bg-white rounded-lg shadow dark:bg-gray-700" style="width: 700px !important; max-width: 95vw !important;">
+    <div class="flex min-h-full w-full items-center justify-center p-4">
+        <div class="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white shadow dark:bg-gray-700">
             
             <div class="flex items-center justify-between p-4 border-b dark:border-gray-600">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Tambah Supplier</h3>
@@ -106,18 +128,34 @@
 
             <form action="{{ route('suppliers.store') }}" method="POST" class="p-6 space-y-6">
                 @csrf
+                <input type="hidden" name="_form" value="supplier_create">
                 <div>
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nama Perusahaan/Toko</label>
-                    <input type="text" name="name" required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white">
+                    <label for="supplier-name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nama Perusahaan/Toko</label>
+                    <input id="supplier-name" type="text" name="name" maxlength="100" value="{{ old('_form') === 'supplier_create' ? old('name') : '' }}" required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white">
                 </div>
                 <div>
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">No. Telepon / WA (Opsional)</label>
-                    <input type="text" name="phone" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white">
+                    <label for="supplier-phone" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">No. Telepon / WA (Opsional)</label>
+                    <input id="supplier-phone" type="text" name="phone" value="{{ old('_form') === 'supplier_create' ? old('phone') : '' }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white">
                 </div>
                 <div>
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Alamat (Opsional)</label>
-                    <textarea name="address" rows="4" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"></textarea>
+                    <label for="supplier-address" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Alamat (Opsional)</label>
+                    <textarea id="supplier-address" name="address" rows="3" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white">{{ old('_form') === 'supplier_create' ? old('address') : '' }}</textarea>
                 </div>
+                <fieldset>
+                    <legend class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Kategori yang disuplai</legend>
+                    <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">Pilih kategori yang dilayani. Jika tidak ada yang dipilih, supplier tersedia untuk semua kategori.</p>
+                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        @foreach ($categories as $category)
+                            <label class="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 dark:border-gray-600 dark:text-gray-200">
+                                <input type="checkbox" name="category_ids[]" value="{{ $category->id }}" @checked(old('_form') === 'supplier_create' && is_array(old('category_ids')) && in_array($category->id, old('category_ids'))) class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                {{ $category->name }}
+                            </label>
+                        @endforeach
+                    </div>
+                    @if ($categories->isEmpty())
+                        <p class="text-sm text-amber-700 dark:text-amber-300">Belum ada kategori. Tambahkan kategori terlebih dahulu agar supplier dapat dibatasi per kategori.</p>
+                    @endif
+                </fieldset>
                 <button type="submit" class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-3 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
                     Simpan Data
                 </button>
@@ -128,8 +166,8 @@
 
 {{-- MODAL EDIT SUPPLIER --}}
 <div id="edit-modal" tabindex="-1" aria-hidden="true" class="hidden fixed inset-0 z-50 overflow-y-auto bg-gray-900 bg-opacity-50 dark:bg-opacity-80">
-    <div class="flex justify-center items-center min-h-full p-4 w-full">
-        <div class="relative bg-white rounded-lg shadow dark:bg-gray-700" style="width: 700px !important; max-width: 95vw !important;">
+    <div class="flex min-h-full w-full items-center justify-center p-4">
+        <div class="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white shadow dark:bg-gray-700">
             
             <div class="flex items-center justify-between p-4 border-b dark:border-gray-600">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Supplier</h3>
@@ -143,9 +181,10 @@
             <form id="edit-form" method="POST" class="p-6 space-y-6">
                 @csrf
                 @method('PUT')
+                <input type="hidden" name="_form" value="supplier_update">
                 <div>
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nama Perusahaan/Toko</label>
-                    <input type="text" name="name" id="edit_name" required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white">
+                    <label for="edit_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nama Perusahaan/Toko</label>
+                    <input type="text" name="name" id="edit_name" maxlength="100" required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white">
                 </div>
                 <div>
                     <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">No. Telepon / WA</label>
@@ -155,6 +194,18 @@
                     <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Alamat</label>
                     <textarea name="address" id="edit_address" rows="4" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"></textarea>
                 </div>
+                <fieldset>
+                    <legend class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Kategori yang disuplai</legend>
+                    <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">Jika tidak ada kategori dipilih, supplier tersedia untuk semua kategori.</p>
+                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        @foreach ($categories as $category)
+                            <label class="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 dark:border-gray-600 dark:text-gray-200">
+                                <input type="checkbox" name="category_ids[]" value="{{ $category->id }}" data-edit-supplier-category class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                {{ $category->name }}
+                            </label>
+                        @endforeach
+                    </div>
+                </fieldset>
                 <button type="submit" class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-3 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
                     Update Data
                 </button>
@@ -164,6 +215,9 @@
 </div>
 
 <script>
+const supplierEditUrlTemplate = @json(route('suppliers.edit', ['id' => '__SUPPLIER_ID__']));
+const supplierUpdateUrlTemplate = @json(route('suppliers.update', ['id' => '__SUPPLIER_ID__']));
+
 // Skrip untuk pencarian real-time pada tabel supplier
 document.getElementById('search-supplier').addEventListener('input', function(e) {
     let keyword = e.target.value.toLowerCase();
@@ -194,21 +248,34 @@ document.getElementById('search-supplier').addEventListener('input', function(e)
 });
 
 function openEditModal(id) {
-    fetch('/suppliers/' + id + '/edit', {
+    const encodedId = encodeURIComponent(id);
+    fetch(supplierEditUrlTemplate.replace('__SUPPLIER_ID__', encodedId), {
         headers: { 'Accept': 'application/json' }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Gagal mengambil data supplier. HTTP ' + response.status);
+        }
+
+        return response.json();
+    })
     .then(data => {
-        document.getElementById('edit-form').action = '/suppliers/' + id;
+        document.getElementById('edit-form').action = supplierUpdateUrlTemplate.replace('__SUPPLIER_ID__', encodedId);
         document.getElementById('edit_name').value = data.name ?? '';
         document.getElementById('edit_phone').value = data.phone ?? '';
         document.getElementById('edit_address').value = data.address ?? '';
+        document.querySelectorAll('[data-edit-supplier-category]').forEach(checkbox => {
+            checkbox.checked = (data.category_ids ?? []).map(String).includes(checkbox.value);
+        });
         
         const modal = document.getElementById('edit-modal');
         modal.classList.remove('hidden');
         modal.setAttribute('aria-hidden', 'false');
     })
-    .catch(error => alert('Gagal mengambil data supplier!'));
+    .catch(error => {
+        console.error(error);
+        alert(error.message || 'Gagal mengambil data supplier.');
+    });
 }
 
 function closeEditModal() {
@@ -216,5 +283,13 @@ function closeEditModal() {
     modal.classList.add('hidden');
     modal.setAttribute('aria-hidden', 'true');
 }
+
+@if (old('_form') === 'supplier_create')
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('add-modal');
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+});
+@endif
 </script>
 @endsection

@@ -70,6 +70,10 @@ class StockOpnameRepository
      */
     public function create(array $data): int
     {
+        if (empty($data['notes'])) {
+            $data['notes'] = '-';
+        }
+
         return (int) DB::table('stock_opnames')->insertGetId(
             array_merge($data, [
                 'status' => 'pending',

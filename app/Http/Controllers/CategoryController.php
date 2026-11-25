@@ -46,10 +46,17 @@ class CategoryController extends Controller
         return redirect()->route('categories.index')->with('success', 'Kategori berhasil diperbarui!');
     }
 
-    // 4. Menghapus data kategori
+    // Tolak penghapusan jika kategori masih dipakai produk.
     public function destroy($id)
     {
-        $this->service->deleteCategory((int) $id);
+        $productCount = $this->service->deleteCategory((int) $id);
+
+        if ($productCount > 0) {
+            return redirect()->route('categories.index')->with(
+                'error',
+                "Kategori tidak bisa dihapus karena masih digunakan oleh {$productCount} produk. Pindahkan atau hapus produk tersebut terlebih dahulu."
+            );
+        }
 
         return redirect()->route('categories.index')->with('success', 'Kategori berhasil dihapus!');
     }

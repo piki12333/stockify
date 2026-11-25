@@ -62,7 +62,7 @@ class TransactionController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'product_id'  => 'required|exists:products,id',
             'type'        => 'required|in:in,out',
             'quantity'    => 'required|integer|min:1',
@@ -73,7 +73,7 @@ class TransactionController extends Controller
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        $this->service->createTask($request->validated(), $request);
+        $this->service->createTask($validated, $request);
 
         return redirect()->route('transactions.index')
             ->with('success', 'Tugas transaksi berhasil dibuat. Stok akan berubah setelah Staff mengonfirmasi.');

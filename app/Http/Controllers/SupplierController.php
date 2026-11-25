@@ -15,16 +15,20 @@ class SupplierController extends Controller
     public function index()
     {
         $suppliers = $this->service->getAllSuppliers();
-        return view('pages.suppliers.index', compact('suppliers'));
+        $categories = $this->service->getAllCategories();
+
+        return view('pages.suppliers.index', compact('suppliers', 'categories'));
     }
 
     // Validasi lalu simpan data pemasok baru.
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:100',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
+            'category_ids' => 'nullable|array',
+            'category_ids.*' => 'integer|distinct|exists:categories,id',
         ]);
 
         $this->service->createSupplier($validated);
@@ -43,9 +47,11 @@ class SupplierController extends Controller
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:100',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
+            'category_ids' => 'nullable|array',
+            'category_ids.*' => 'integer|distinct|exists:categories,id',
         ]);
 
         $this->service->updateSupplier((int) $id, $validated);
@@ -56,7 +62,13 @@ class SupplierController extends Controller
     // Hapus pemasok berdasarkan ID.
     public function destroy($id)
     {
-        $this->service->deleteSupplier((int) $id);
+        if (! $this->service->deleteSupplier((int) $id)) {
+            return redirect()->route('suppliers.index')->with(
+                'error',
+                'Supplier tidak bisa dihapus karena masih digunakan oleh produk.'
+            );
+        }
+
         return redirect()->route('suppliers.index')->with('success', 'Supplier berhasil dihapus!');
     }
 }

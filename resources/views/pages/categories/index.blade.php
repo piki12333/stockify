@@ -10,6 +10,11 @@
             <span class="font-medium">Berhasil!</span> {{ session('success') }}
         </div>
     @endif
+    @if(session('error'))
+        <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-red-900/30 dark:text-red-300 border border-red-300 dark:border-red-800" role="alert">
+            <span class="font-medium">Tidak dapat menghapus kategori.</span> {{ session('error') }}
+        </div>
+    @endif
 
     <div class="p-4 bg-white block sm:flex items-center justify-between border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700 rounded-t-lg shadow-sm">
         <div class="w-full mb-1">

@@ -32,7 +32,7 @@ class ProductController extends Controller
         $categoryId = $request->filled('category_id') ? (int) $request->input('category_id') : null;
 
         $totalProducts = $this->repository->countFiltered($search, $categoryId);
-        $products      = $this->repository->paginate($search, $categoryId, 25)->appends($request->query());
+        $products      = $this->repository->paginate($search, $categoryId, 100)->appends($request->query());
         $categories    = $this->repository->allCategories();
         $suppliers     = $this->repository->allSuppliers();
 

@@ -33,6 +33,7 @@ class ProductService
      */
     public function store(array $validated, ?UploadedFile $imageFile): void
     {
+        $this->ensureSupplierSupportsCategory((int) $validated['supplier_id'], (int) $validated['category_id']);
         $attributes = $this->normalizeAttributes($validated['attributes'] ?? []);
         $imagePath  = $imageFile ? $imageFile->store('products', 'public') : null;
 
@@ -59,6 +60,7 @@ class ProductService
      */
     public function update(int $id, array $validated, ?UploadedFile $imageFile): void
     {
+        $this->ensureSupplierSupportsCategory((int) $validated['supplier_id'], (int) $validated['category_id']);
         $product    = $this->repository->findRaw($id);
         abort_if($product === null, 404, 'Produk tidak ditemukan.');
 
@@ -314,6 +316,13 @@ class ProductService
                 continue;
             }
 
+            try {
+                $this->ensureSupplierSupportsCategory((int) $supplierId, (int) $categoryId);
+            } catch (ValidationException $exception) {
+                $errors[] = "Baris {$line}: " . implode(' ', array_merge(...array_values($exception->errors())));
+                continue;
+            }
+
             if ($code !== '') {
                 $seenCodes[strtolower($code)] = true;
             }
@@ -376,6 +385,25 @@ class ProductService
     // Private helpers
     // -------------------------------------------------------------------------
 
+    private function ensureSupplierSupportsCategory(int $supplierId, int $categoryId): void
+    {
+        $supplierHasCategories = DB::table('supplier_categories')
+            ->where('supplier_id', $supplierId)
+            ->exists();
+
+        if (
+            $supplierHasCategories
+            && ! DB::table('supplier_categories')
+                ->where('supplier_id', $supplierId)
+                ->where('category_id', $categoryId)
+                ->exists()
+        ) {
+            throw ValidationException::withMessages([
+                'supplier_id' => 'Supplier yang dipilih tidak melayani kategori produk ini.',
+            ]);
+        }
+    }
+
     /**
      * Bersihkan dan validasi pasangan nama-nilai atribut; buang yang kosong.
      *
@@ -433,4 +461,3 @@ class ProductService
         return preg_match('/^[\s]*[=+\-@]/u', $value) ? "'" . $value : $value;
     }
 }
-

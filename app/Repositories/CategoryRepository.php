@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\Category;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 class CategoryRepository
 {
@@ -50,10 +51,20 @@ class CategoryRepository
     /**
      * Hapus kategori.
      */
-    public function delete(int $id): bool
+    public function delete(int $id): int
     {
-        $category = $this->findById($id);
-        return $category->delete();
+        return DB::transaction(function () use ($id): int {
+            $category = Category::query()->lockForUpdate()->findOrFail($id);
+            $productCount = $category->products()->count();
+
+            if ($productCount > 0) {
+                return $productCount;
+            }
+
+            DB::table('supplier_categories')->where('category_id', $id)->delete();
+            $category->delete();
+
+            return 0;
+        });
     }
 }
-

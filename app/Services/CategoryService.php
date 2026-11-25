@@ -33,9 +33,8 @@ class CategoryService
         ]);
     }
 
-    public function deleteCategory(int $id): bool
+    public function deleteCategory(int $id): int
     {
         return $this->repository->delete($id);
     }
 }
-

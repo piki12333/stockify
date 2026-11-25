@@ -16,6 +16,11 @@ class SupplierService
         return $this->repository->getAll();
     }
 
+    public function getAllCategories(): Collection
+    {
+        return $this->repository->getCategories();
+    }
+
     public function getSupplierById(int $id): ?object
     {
         return $this->repository->findById($id);
@@ -27,6 +32,8 @@ class SupplierService
             'name' => $data['name'],
             'phone' => $data['phone'] ?? '-',
             'address' => $data['address'] ?? '-',
+            'info' => $data['info'] ?? '-',
+            'category_ids' => $data['category_ids'] ?? [],
         ]);
     }
 
@@ -36,12 +43,13 @@ class SupplierService
             'name' => $data['name'],
             'phone' => $data['phone'] ?? '-',
             'address' => $data['address'] ?? '-',
+            'info' => $data['info'] ?? '-',
+            'category_ids' => $data['category_ids'] ?? [],
         ]);
     }
 
-    public function deleteSupplier(int $id): int
+    public function deleteSupplier(int $id): bool
     {
         return $this->repository->delete($id);
     }
 }
-

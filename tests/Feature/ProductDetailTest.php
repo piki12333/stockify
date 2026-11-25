@@ -41,6 +41,48 @@ class ProductDetailTest extends TestCase
         });
     }
 
+    public function test_product_search_finds_matches_outside_the_current_page_by_category(): void
+    {
+        $specialCategoryId = DB::table('categories')->insertGetId(['name' => 'Kategori Khusus']);
+        $specialSupplierId = DB::table('suppliers')->insertGetId(['name' => 'Supplier Khusus']);
+        DB::table('products')->insert([
+            'product_code' => 'KH-001',
+            'name' => 'Produk Target',
+            'category_id' => $specialCategoryId,
+            'supplier_id' => $specialSupplierId,
+            'purchase_price' => 1000,
+            'selling_price' => 1500,
+            'stock' => 10,
+            'min_stock' => 2,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $commonCategoryId = DB::table('categories')->insertGetId(['name' => 'Kategori Umum']);
+        $commonSupplierId = DB::table('suppliers')->insertGetId(['name' => 'Supplier Umum']);
+        for ($index = 1; $index <= 100; $index++) {
+            DB::table('products')->insert([
+                'product_code' => 'UM-' . str_pad((string) $index, 3, '0', STR_PAD_LEFT),
+                'name' => 'Produk Biasa ' . $index,
+                'category_id' => $commonCategoryId,
+                'supplier_id' => $commonSupplierId,
+                'purchase_price' => 1000,
+                'selling_price' => 1500,
+                'stock' => 10,
+                'min_stock' => 2,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->get(route('produk.index', ['search' => 'Kategori Khusus']))
+            ->assertOk()
+            ->assertSee('Produk Target')
+            ->assertViewHas('totalProducts', 1)
+            ->assertDontSee('Produk Biasa 100');
+    }
+
     public function test_staff_can_view_product_stock_details_and_transaction_history_without_prices(): void
     {
         $staff = User::factory()->create(['role' => User::ROLE_STAFF]);

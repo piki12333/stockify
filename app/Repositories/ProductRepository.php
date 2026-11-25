@@ -25,21 +25,30 @@ class ProductRepository
         ?int $categoryId,
         int $perPage = 25
     ): LengthAwarePaginator {
-        $query = DB::table('products');
+        $query = DB::table('products')
+            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+            ->leftJoin('suppliers', 'products.supplier_id', '=', 'suppliers.id')
+            ->select(
+                'products.*',
+                'categories.name as category_name',
+                'suppliers.name as supplier_name'
+            );
 
         if ($search !== null && $search !== '') {
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('product_code', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                $q->where('products.name', 'like', "%{$search}%")
+                  ->orWhere('products.product_code', 'like', "%{$search}%")
+                  ->orWhere('products.description', 'like', "%{$search}%")
+                  ->orWhere('categories.name', 'like', "%{$search}%")
+                  ->orWhere('suppliers.name', 'like', "%{$search}%");
             });
         }
 
         if ($categoryId !== null) {
-            $query->where('category_id', $categoryId);
+            $query->where('products.category_id', $categoryId);
         }
 
-        return $query->orderByDesc('id')->paginate($perPage);
+        return $query->orderByDesc('products.id')->paginate($perPage);
     }
 
     /**
@@ -47,21 +56,25 @@ class ProductRepository
      */
     public function countFiltered(?string $search, ?int $categoryId): int
     {
-        $query = DB::table('products');
+        $query = DB::table('products')
+            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+            ->leftJoin('suppliers', 'products.supplier_id', '=', 'suppliers.id');
 
         if ($search !== null && $search !== '') {
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('product_code', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                $q->where('products.name', 'like', "%{$search}%")
+                  ->orWhere('products.product_code', 'like', "%{$search}%")
+                  ->orWhere('products.description', 'like', "%{$search}%")
+                  ->orWhere('categories.name', 'like', "%{$search}%")
+                  ->orWhere('suppliers.name', 'like', "%{$search}%");
             });
         }
 
         if ($categoryId !== null) {
-            $query->where('category_id', $categoryId);
+            $query->where('products.category_id', $categoryId);
         }
 
-        return $query->count();
+        return $query->count('products.id');
     }
 
     // -------------------------------------------------------------------------
@@ -215,7 +228,18 @@ class ProductRepository
 
     public function allSuppliers(): Collection
     {
-        return DB::table('suppliers')->orderBy('name')->get();
+        $suppliers = DB::table('suppliers')->orderBy('name')->get();
+        $categoryIdsBySupplier = DB::table('supplier_categories')
+            ->get(['supplier_id', 'category_id'])
+            ->groupBy('supplier_id');
+
+        return $suppliers->each(function (object $supplier) use ($categoryIdsBySupplier): void {
+            $supplier->category_ids = $categoryIdsBySupplier
+                ->get($supplier->id, collect())
+                ->pluck('category_id')
+                ->map(static fn ($categoryId): int => (int) $categoryId)
+                ->all();
+        });
     }
 
     /**
@@ -295,4 +319,3 @@ class ProductRepository
             ->get();
     }
 }
-

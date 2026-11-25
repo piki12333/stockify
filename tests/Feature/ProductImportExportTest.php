@@ -102,6 +102,32 @@ class ProductImportExportTest extends TestCase
         $this->assertDatabaseCount('products', 0);
     }
 
+    public function test_import_rejects_supplier_that_does_not_serve_product_category(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $electronicsCategoryId = DB::table('categories')->insertGetId(['name' => 'Elektronik']);
+        DB::table('categories')->insert(['name' => 'Makanan']);
+        DB::table('suppliers')->insert(['name' => 'Supplier Elektronik']);
+        DB::table('supplier_categories')->insert([
+            'supplier_id' => 1,
+            'category_id' => $electronicsCategoryId,
+        ]);
+        $csv = implode("\n", [
+            'product_code,name,category,supplier,description,purchase_price,selling_price,stock,min_stock,image_url',
+            "FD-100,Keripik,Makanan,Supplier Elektronik,Camilan,1000,2000,10,1,",
+        ]);
+
+        $this->actingAs($admin)
+            ->from(route('produk.index'))
+            ->post(route('produk.import'), [
+                'file' => UploadedFile::fake()->createWithContent('produk.csv', $csv),
+            ])
+            ->assertRedirect(route('produk.index'))
+            ->assertSessionHasErrors('file');
+
+        $this->assertDatabaseCount('products', 0);
+    }
+
     public function test_product_attributes_can_be_imported_and_exported_as_json(): void
     {
         $admin = User::factory()->admin()->create();
